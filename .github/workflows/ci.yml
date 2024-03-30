@@ -1,0 +1,143 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  test:
+    name: ${{matrix.name}}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Test the core crate (akd_core)
+            package: akd_core
+            flags: 
+
+          - name: Test the core crate (akd_core) with no standard library
+            package: akd_core
+            flags: --features nostd
+
+          - name: Test the core crate (akd_core) with protobuf and serde enabled
+            package: akd_core
+            flags: --features protobuf,serde_serialization
+
+          - name: Test the base library, with default features
+            package: akd
+
+          - name: Test the base library, enabling runtime metrics processing
+            package: akd
+            flags: --features runtime_metrics
+
+    steps:
+      - uses: actions/checkout@main
+
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Run test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --package ${{matrix.package}} ${{matrix.flags}}
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - name: Install minimal stable with clippy
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: clippy
+          override: true
+
+      - name: Run Clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all -- -D clippy::all -D warnings
+
+  rustfmt:
+    name: rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - name: Install minimal stable with rustfmt
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: rustfmt
+          override: true
+
+      - name: Build library (make sure all build.rs files have generated necessary code)
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --package akd_core
+
+      - name: Run rustfmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+  benches:
+    name: benches
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: Build the akd_core benches
+            package: akd_core
+            flags: -F bench
+          - name: Build the akd benches
+            package: akd
+            flags: -F bench
+    steps:
+      - uses: actions/checkout@main
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Run test
+        uses: actions-rs/cargo@v1
+        with:
+          command: bench
+          args: --package ${{matrix.package}} ${{matrix.flags}}
+
+  docs:
+    name: docs
+    runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: -Dwarnings
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: akd
+          - package: akd_core
+    steps:
+      - uses: actions/checkout@main
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Run rustdoc for ${{matrix.package}}
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --package ${{matrix.package}}
