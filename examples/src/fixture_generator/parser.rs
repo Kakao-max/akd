@@ -138,3 +138,4 @@ fn parse_user_events(s: &str) -> Result<User, String> {
         events,
     })
 }
+    

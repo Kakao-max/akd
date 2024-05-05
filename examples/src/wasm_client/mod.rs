@@ -89,6 +89,7 @@ impl LookupResult {
     }
 }
 
+
 #[allow(unused)]
 fn fallible_lookup_verify<TC: Configuration>(
     vrf_public_key: &[u8],
@@ -96,7 +97,7 @@ fn fallible_lookup_verify<TC: Configuration>(
     current_epoch: u64,
     akd_key: akd::AkdLabel,
     // protobuf encoded proof
-    lookup_proof: &[u8],
+    lookup_proof: &[u8],     
 ) -> Result<akd_core::VerifyResult, VerificationError> {
     let root_hash =
         akd_core::hash::try_parse_digest(root_hash_ref).map_err(VerificationError::LookupProof)?;

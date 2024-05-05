@@ -43,7 +43,7 @@ impl std::fmt::Display for ReaderError {
     }
 }
 
-/// YAML implementor of Reader trait.
+/// YAML implementor of Reader trait..
 pub mod yaml;
 
 #[cfg(test)]
